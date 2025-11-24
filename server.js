@@ -4,7 +4,9 @@ import { createServer } from 'node:http';
 import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
 import { join } from 'node:path';
 import { hostname } from 'node:os';
-import { wispServer } from '@mercuryworkshop/wisp-js';
+
+// ← IMPORT CORRECTO PARA LA NUEVA wisp-js (server as wisp)
+import { server as wisp } from '@mercuryworkshop/wisp-js/server';
 
 const bare = createBareServer('/bare/');
 const app = express();
@@ -41,16 +43,17 @@ server.on('upgrade', (req, socket, head) => {
   if (bare.shouldRoute(req)) {
     bare.routeUpgrade(req, socket, head);
   } else if (req.url.startsWith('/wisp/')) {
-    wispServer(req, socket, head);
+    // ← USO IGUAL: wisp.routeRequest (la nueva API lo soporta directo)
+    wisp.routeRequest(req, socket, head);
   } else {
     socket.end();
   }
 });
 
-// PUERTO Y HOST FIJOS PARA RAILWAY
+// PUERTO Y HOST PARA RAILWAY (crítico para deploy exitoso)
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Zephiryx Proxy corriendo en el puerto ${PORT}`);
+  console.log(`🚀 Zephiryx Proxy en puerto ${PORT}`);
   console.log(`http://0.0.0.0:${PORT}`);
   console.log(`Bare: /bare/  •  Wisp: /wisp/  •  UV: /uv/`);
 });
