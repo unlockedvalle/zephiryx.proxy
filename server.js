@@ -4,14 +4,12 @@ import { createServer } from 'node:http';
 import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
 import { join } from 'node:path';
 import { hostname } from 'node:os';
-
-// CAMBIO AQUÍ → nueva librería oficial y segura
 import { wispServer } from '@mercuryworkshop/wisp-js';
 
 const bare = createBareServer('/bare/');
 const app = express();
 
-// CORS headers
+// CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -19,18 +17,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Servir archivos estáticos de Ultraviolet
+// Ultraviolet static files
 app.use('/uv/', express.static(uvPath));
 
-// Servir el frontend
+// Frontend
 app.use(express.static('public'));
-
-// Ruta principal
 app.get('/', (req, res) => {
   res.sendFile(join(process.cwd(), 'public', 'index.html'));
 });
 
-// Crear servidor HTTP
+// HTTP server
 const server = createServer();
 
 server.on('request', (req, res) => {
@@ -44,27 +40,17 @@ server.on('request', (req, res) => {
 server.on('upgrade', (req, socket, head) => {
   if (bare.shouldRoute(req)) {
     bare.routeUpgrade(req, socket, head);
-  } 
-  // CAMBIO AQUÍ → nueva forma de usar wisp-js
-  else if (req.url.startsWith('/wisp/')) {
+  } else if (req.url.startsWith('/wisp/')) {
     wispServer(req, socket, head);
-  } 
-  else {
+  } else {
     socket.end();
   }
 });
 
+// PUERTO Y HOST FIJOS PARA RAILWAY
 const PORT = process.env.PORT || 8080;
-
-server.on('listening', () => {
-  const address = server.address();
-  console.log(`Zephiryx Proxy Server escuchando en:`);
-  console.log(` Local: http://localhost:${address.port}`);
-  console.log(` Network: http://${hostname()}:${address.port}`);
-  console.log(`\nBackend configurado correctamente`);
-  console.log(` Bare Server: /bare/`);
-  console.log(` Wisp Server: /wisp/`);
-  console.log(` UV Path: /uv/`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Zephiryx Proxy corriendo en el puerto ${PORT}`);
+  console.log(`http://0.0.0.0:${PORT}`);
+  console.log(`Bare: /bare/  •  Wisp: /wisp/  •  UV: /uv/`);
 });
-
-server.listen({ port: PORT });
