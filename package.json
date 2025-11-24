@@ -14,7 +14,7 @@
   "dependencies": {
     "@titaniumnetwork-dev/ultraviolet": "^3.2.7",
     "@tomphttp/bare-server-node": "^2.0.5",
-    "@mercuryworkshop/wisp-js": "^1.4.0",
+    "@mercuryworkshop/wisp-js": "^0.4.0",
     "@mercuryworkshop/bare-mux": "^2.0.5",
     "@mercuryworkshop/epoxy-transport": "^2.1.9",
     "express": "^4.19.2"
