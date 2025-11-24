@@ -4,7 +4,9 @@ import { createServer } from 'node:http';
 import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
 import { join } from 'node:path';
 import { hostname } from 'node:os';
-import wisp from '@mercuryworkshop/wisp-js/server';
+
+// ← CAMBIO AQUÍ: named import oficial (drop-in replacement del viejo)
+import { server as wisp } from '@mercuryworkshop/wisp-js/server';
 
 const bare = createBareServer('/bare/');
 const app = express();
@@ -42,8 +44,8 @@ server.on('request', (req, res) => {
 server.on('upgrade', (req, socket, head) => {
   if (bare.shouldRoute(req)) {
     bare.routeUpgrade(req, socket, head);
-  } else if (req.url.endsWith('/wisp/')) {
-    wisp.routeRequest(req, socket, head);
+  } else if (req.url.startsWith('/wisp/')) {  // ← Pequeño cambio: startsWith para consistencia
+    wisp.routeRequest(req, socket, head);     // ← Funciona igual que el viejo wisp
   } else {
     socket.end();
   }
@@ -51,15 +53,16 @@ server.on('upgrade', (req, socket, head) => {
 
 const PORT = process.env.PORT || 8080;
 
+// ← CAMBIO AQUÍ: listen correcto para Railway (host '0.0.0.0')
+server.listen(PORT, '0.0.0.0');
+
 server.on('listening', () => {
   const address = server.address();
   console.log(`🚀 Zephiryx Proxy Server escuchando en:`);
-  console.log(`   Local:   http://localhost:${address.port}`);
-  console.log(`   Network: http://${hostname()}:${address.port}`);
+  console.log(` Local: http://localhost:${address.port}`);
+  console.log(` Network: http://${hostname()}:${address.port}`);
   console.log(`\n✨ Backend configurado correctamente`);
-  console.log(`   Bare Server: /bare/`);
-  console.log(`   Wisp Server: /wisp/`);
-  console.log(`   UV Path: /uv/`);
+  console.log(` Bare Server: /bare/`);
+  console.log(` Wisp Server: /wisp/`);
+  console.log(` UV Path: /uv/`);
 });
-
-server.listen({ port: PORT });
