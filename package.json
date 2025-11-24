@@ -5,8 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
   "keywords": ["proxy", "ultraviolet", "web-proxy", "bypass"],
   "author": "Zephiryx",
@@ -14,12 +13,12 @@
   "dependencies": {
     "@titaniumnetwork-dev/ultraviolet": "^3.2.7",
     "@tomphttp/bare-server-node": "^2.0.5",
-    "@mercuryworkshop/wisp-js": "^0.4.0",
+    "wisp-server-node": "^1.1.8",  // ← ESTE ES EL QUE FUNCIONA CON TU IMPORT (no deprecated en práctica)
     "@mercuryworkshop/bare-mux": "^2.0.5",
     "@mercuryworkshop/epoxy-transport": "^2.1.9",
     "express": "^4.19.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }
