@@ -5,13 +5,11 @@ import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
 import { join } from 'node:path';
 import { hostname } from 'node:os';
 
-// ← ESTA LÍNEA FUNCIONA PERFECTO (default export)
-import wisp from 'wisp-server-node';
+import { server as wisp } from '@mercuryworkshop/wisp-js/server';
 
 const bare = createBareServer('/bare/');
 const app = express();
 
-// CORS headers
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -19,18 +17,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Servir archivos estáticos de Ultraviolet
 app.use('/uv/', express.static(uvPath));
-
-// Servir el frontend
 app.use(express.static('public'));
-
-// Ruta principal
 app.get('/', (req, res) => {
   res.sendFile(join(process.cwd(), 'public', 'index.html'));
 });
 
-// Crear servidor HTTP
 const server = createServer();
 
 server.on('request', (req, res) => {
@@ -55,14 +47,13 @@ const PORT = process.env.PORT || 8080;
 
 server.on('listening', () => {
   const address = server.address();
-  console.log(`Zephiryx Proxy Server escuchando en:`);
+  console.log(`🚀 Zephiryx Proxy Server escuchando en:`);
   console.log(` Local: http://localhost:${address.port}`);
   console.log(` Network: http://${hostname()}:${address.port}`);
-  console.log(`\nBackend configurado correctamente`);
+  console.log(`\n✨ Backend configurado correctamente`);
   console.log(` Bare Server: /bare/`);
   console.log(` Wisp Server: /wisp/`);
   console.log(` UV Path: /uv/`);
 });
 
-// ← IMPORTANTE PARA RAILWAY
 server.listen(PORT, '0.0.0.0');
