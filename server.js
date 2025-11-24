@@ -4,7 +4,9 @@ import { createServer } from 'node:http';
 import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
 import { join } from 'node:path';
 import { hostname } from 'node:os';
-import wisp from 'wisp-server-node';
+
+// CAMBIO AQUÍ → nueva librería oficial y segura
+import { wispServer } from '@mercuryworkshop/wisp-js';
 
 const bare = createBareServer('/bare/');
 const app = express();
@@ -42,9 +44,12 @@ server.on('request', (req, res) => {
 server.on('upgrade', (req, socket, head) => {
   if (bare.shouldRoute(req)) {
     bare.routeUpgrade(req, socket, head);
-  } else if (req.url.endsWith('/wisp/')) {
-    wisp.routeRequest(req, socket, head);
-  } else {
+  } 
+  // CAMBIO AQUÍ → nueva forma de usar wisp-js
+  else if (req.url.startsWith('/wisp/')) {
+    wispServer(req, socket, head);
+  } 
+  else {
     socket.end();
   }
 });
@@ -53,13 +58,13 @@ const PORT = process.env.PORT || 8080;
 
 server.on('listening', () => {
   const address = server.address();
-  console.log(`🚀 Zephiryx Proxy Server escuchando en:`);
-  console.log(`   Local:   http://localhost:${address.port}`);
-  console.log(`   Network: http://${hostname()}:${address.port}`);
-  console.log(`\n✨ Backend configurado correctamente`);
-  console.log(`   Bare Server: /bare/`);
-  console.log(`   Wisp Server: /wisp/`);
-  console.log(`   UV Path: /uv/`);
+  console.log(`Zephiryx Proxy Server escuchando en:`);
+  console.log(` Local: http://localhost:${address.port}`);
+  console.log(` Network: http://${hostname()}:${address.port}`);
+  console.log(`\nBackend configurado correctamente`);
+  console.log(` Bare Server: /bare/`);
+  console.log(` Wisp Server: /wisp/`);
+  console.log(` UV Path: /uv/`);
 });
 
 server.listen({ port: PORT });
