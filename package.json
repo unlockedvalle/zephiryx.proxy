@@ -1,0 +1,25 @@
+{
+  "name": "zephiryx-proxy",
+  "version": "1.0.0",
+  "description": "Zephiryx Proxy - Modern web proxy with Ultraviolet",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["proxy", "ultraviolet", "web-proxy", "bypass"],
+  "author": "Zephiryx",
+  "license": "MIT",
+  "dependencies": {
+    "@titaniumnetwork-dev/ultraviolet": "^3.2.7",
+    "@tomphttp/bare-server-node": "^2.0.5",
+    "wisp-server-node": "^1.1.3",
+    "@mercuryworkshop/bare-mux": "^2.0.5",
+    "@mercuryworkshop/epoxy-transport": "^2.1.9",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
