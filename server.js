@@ -102,17 +102,44 @@ app.get('/', (req, res) => {
         const loading = document.getElementById('loading');
         const content = document.getElementById('content');
         
+        // Esperar a que Ultraviolet se cargue
+        function waitForUV() {
+            return new Promise((resolve) => {
+                if (typeof Ultraviolet !== 'undefined' && typeof __uv$config !== 'undefined') {
+                    resolve();
+                } else {
+                    setTimeout(() => waitForUV().then(resolve), 100);
+                }
+            });
+        }
+        
         // Registrar Service Worker
         async function init() {
             try {
+                // Esperar a que UV esté listo
+                await waitForUV();
+                console.log('Ultraviolet cargado');
+                
                 const registration = await navigator.serviceWorker.register('/uv/uv.sw.js', {
-                    scope: '/service/'
+                    scope: '/service/',
+                    updateViaCache: 'none'
                 });
                 
-                // Esperar a que esté activo
-                await navigator.serviceWorker.ready;
+                console.log('Service Worker registrado:', registration);
                 
-                console.log('Service Worker registrado correctamente');
+                // Esperar a que esté activo
+                if (registration.installing) {
+                    await new Promise((resolve) => {
+                        registration.installing.addEventListener('statechange', (e) => {
+                            if (e.target.state === 'activated') resolve();
+                        });
+                    });
+                } else if (registration.waiting) {
+                    await registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+                
+                await navigator.serviceWorker.ready;
+                console.log('Service Worker activo');
                 
                 // Obtener URL del hash
                 const hash = window.location.hash;
@@ -121,19 +148,20 @@ app.get('/', (req, res) => {
                     const proxyUrl = '/service/' + __uv$config.encodeUrl(targetUrl);
                     
                     console.log('Cargando:', targetUrl);
+                    console.log('Proxy URL:', proxyUrl);
                     content.src = proxyUrl;
                     
                     // Mostrar el contenido después de un pequeño delay
                     setTimeout(() => {
                         content.style.display = 'block';
                         loading.style.display = 'none';
-                    }, 1000);
+                    }, 1500);
                 } else {
                     loading.innerHTML = '<div class="logo">⚡</div><p style="color: #fbbf24;">No se especificó URL</p><p style="font-size: 0.9rem; margin-top: 1rem;">Usa el frontend de Zephiryx para navegar</p>';
                 }
             } catch (error) {
-                console.error('Error:', error);
-                loading.innerHTML = '<div class="logo">❌</div><p style="color: #ef4444;">Error al inicializar el proxy</p><p style="font-size: 0.8rem; margin-top: 1rem;">' + error.message + '</p>';
+                console.error('Error completo:', error);
+                loading.innerHTML = '<div class="logo">❌</div><p style="color: #ef4444;">Error al inicializar el proxy</p><p style="font-size: 0.8rem; margin-top: 1rem; max-width: 400px;">' + error.message + '</p>';
             }
         }
         
@@ -153,7 +181,7 @@ app.get('/', (req, res) => {
                 setTimeout(() => {
                     content.style.display = 'block';
                     loading.style.display = 'none';
-                }, 1000);
+                }, 1500);
             }
         });
         
