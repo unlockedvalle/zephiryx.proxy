@@ -8,11 +8,21 @@ import { hostname } from 'node:os';
 const bare = createBareServer('/bare/');
 const app = express();
 
-// CORS headers
+// CORS headers - IMPORTANTE para GitHub Pages
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Service-Worker');
+  res.header('Service-Worker-Allowed', '/');
+  res.header('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.header('Cross-Origin-Opener-Policy', 'same-origin');
+  
+  // Para Service Workers desde GitHub Pages
+  if (req.path.includes('uv.sw.js')) {
+    res.header('Content-Type', 'application/javascript');
+    res.header('Service-Worker-Allowed', '/');
+  }
+  
   next();
 });
 
