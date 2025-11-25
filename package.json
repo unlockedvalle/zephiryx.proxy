@@ -5,15 +5,12 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "build": "ultraviolet build --out public/uv",     
-    "postinstall": "npm run build"                    
+    "start": "node server.js"
   },
   "keywords": ["proxy", "ultraviolet", "web-proxy", "bypass"],
   "author": "Zephiryx",
   "license": "MIT",
   "dependencies": {
-    "@titaniumnetwork-dev/ultraviolet": "^3.2.7",
     "@tomphttp/bare-server-node": "^2.0.5",
     "express": "^4.19.2"
   },
