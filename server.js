@@ -24,8 +24,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Servir archivos estáticos de Ultraviolet
-app.use('/uv/', express.static(uvPath));
+// Servir archivos estáticos de Ultraviolet con headers especiales
+app.use('/uv/', (req, res, next) => {
+  // CRÍTICO: Permitir que el Service Worker controle /service/
+  if (req.path.includes('uv.sw.js')) {
+    res.header('Service-Worker-Allowed', '/');
+    res.header('Content-Type', 'application/javascript');
+  }
+  next();
+}, express.static(uvPath));
 
 // Servir el frontend (si tienes archivos en /public)
 app.use(express.static('public'));
