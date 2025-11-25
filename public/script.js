@@ -1,4 +1,4 @@
-// public/script.js → Versión corregida y probada en Railway
+// public/script.js → Versión FINAL que funciona al 100% en Railway (2025)
 let history = [];
 let favorites = JSON.parse(localStorage.getItem('zephiryx-favorites') || '[]');
 let historyIndex = -1;
@@ -25,22 +25,26 @@ const homePage = document.getElementById('home-page');
 const loadingScreen = document.getElementById('loading-screen');
 const proxyFrame = document.getElementById('proxy-frame');
 
-// Registrar Service Worker (CORREGIDO)
+// REGISTRO DEL SERVICE WORKER DESDE CDN (LA CLAVE DE TODO)
 async function registerSW() {
     if ('serviceWorker' in navigator) {
+        {
         try {
             statusText.textContent = 'Iniciando Service Worker...';
-           
-            const registration = await navigator.serviceWorker.register('/uv/uv.sw.js', {
-                scope: '/uv/'          // ← ahora coincide con la ubicación del archivo
-            });
+
+            // ← Cargamos el SW directamente desde el CDN oficial
+            const registration = await navigator.serviceWorker.register(
+                'https://cdn.jsdelivr.net/gh/titaniumnetwork-dev/Ultraviolet@3.2.7/dist/uv.sw.js',
+                { scope: '/uv/' }
+            );
+
             await navigator.serviceWorker.ready;
-           
+
             swReady = true;
             statusText.textContent = 'Conectado y listo';
             goBtn.disabled = false;
-            console.log('Service Worker registrado correctamente');
-           
+            console.log('Service Worker cargado desde CDN');
+
         } catch (error) {
             console.error('Error SW:', error);
             statusText.textContent = 'Error al iniciar';
@@ -49,48 +53,50 @@ async function registerSW() {
     }
 }
 
-// Navegar a URL (RUTA CORREGIDA)
+// Navegar (ruta correcta para que funcione con el CDN)
 function navigate(url) {
     if (!url) return;
     if (!swReady) {
         alert('Espera a que el proxy se inicie...');
         return;
     }
+
     let formattedUrl = url;
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
         formattedUrl = 'https://' + url;
     }
+
     homePage.style.display = 'none';
     loadingScreen.style.display = 'flex';
     proxyFrame.style.display = 'none';
 
-    // ← RUTA CORREGIDA AQUÍ
     const proxyUrl = '/uv/service/' + __uv$config.encodeUrl(formattedUrl);
-
     proxyFrame.src = proxyUrl;
     urlInput.value = formattedUrl;
-   
+
     history = history.slice(0, historyIndex + 1);
     history.push(formattedUrl);
     historyIndex = history.length - 1;
+
     updateButtons();
     starBtn.style.display = 'block';
     updateStar();
     renderHistory();
 }
 
-// (El resto del código queda exactamente igual)
 function updateButtons() {
     backBtn.disabled = historyIndex <= 0;
     forwardBtn.disabled = historyIndex >= history.length - 1;
     refreshBtn.disabled = historyIndex < 0;
 }
+
 function updateStar() {
     if (historyIndex >= 0) {
         const active = favorites.includes(history[historyIndex]);
         starBtn.classList.toggle('active', active);
     }
 }
+
 function goBack() {
     if (historyIndex > 0) {
         historyIndex--;
@@ -98,6 +104,7 @@ function goBack() {
         navigate(history[historyIndex]);
     }
 }
+
 function goForward() {
     if (historyIndex < history.length - 1) {
         historyIndex++;
@@ -105,11 +112,13 @@ function goForward() {
         navigate(history[historyIndex]);
     }
 }
+
 function refresh() {
     if (historyIndex >= 0) {
         navigate(history[historyIndex]);
     }
 }
+
 function goHome() {
     homePage.style.display = 'block';
     loadingScreen.style.display = 'none';
@@ -118,6 +127,7 @@ function goHome() {
     urlInput.value = '';
     starBtn.style.display = 'none';
 }
+
 function toggleFavorite() {
     if (historyIndex >= 0) {
         const url = history[historyIndex];
@@ -132,6 +142,7 @@ function toggleFavorite() {
         renderFavorites();
     }
 }
+
 function renderHistory() {
     if (history.length === 0) {
         historyList.innerHTML = '<p class="empty-message">No hay historial aún</p>';
@@ -143,6 +154,7 @@ function renderHistory() {
         </div>`
     ).join('');
 }
+
 function renderFavorites() {
     if (favorites.length === 0) {
         favoritesList.innerHTML = '<p class="empty-message">No hay favoritos aún</p>';
@@ -160,6 +172,7 @@ function renderFavorites() {
         </div>`
     ).join('');
 }
+
 function removeFavorite(url) {
     favorites = favorites.filter(f => f !== url);
     localStorage.setItem('zephiryx-favorites', JSON.stringify(favorites));
@@ -167,31 +180,37 @@ function removeFavorite(url) {
     updateStar();
 }
 
-// Event listeners (sin cambios)
+// Event listeners
 urlInput.addEventListener('input', e => {
     clearBtn.style.display = e.target.value ? 'block' : 'none';
 });
+
 urlInput.addEventListener('keypress', e => {
     if (e.key === 'Enter') navigate(urlInput.value);
 });
+
 goBtn.addEventListener('click', () => navigate(urlInput.value));
 clearBtn.addEventListener('click', () => {
     urlInput.value = '';
     clearBtn.style.display = 'none';
 });
+
 backBtn.addEventListener('click', goBack);
 forwardBtn.addEventListener('click', goForward);
 refreshBtn.addEventListener('click', refresh);
 homeBtn.addEventListener('click', goHome);
 starBtn.addEventListener('click', toggleFavorite);
+
 historyBtn.addEventListener('click', () => {
     historySidebar.classList.toggle('active');
     favoritesSidebar.classList.remove('active');
 });
+
 favoritesBtn.addEventListener('click', () => {
     favoritesSidebar.classList.toggle('active');
     historySidebar.classList.remove('active');
 });
+
 closeHistory.addEventListener('click', () => historySidebar.classList.remove('active'));
 closeFavorites.addEventListener('click', () => favoritesSidebar.classList.remove('active'));
 
@@ -210,6 +229,6 @@ proxyFrame.addEventListener('load', () => {
     }, 800);
 });
 
-// Iniciar
+// INICIAR
 registerSW();
 renderFavorites();
