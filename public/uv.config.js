@@ -8,4 +8,6 @@ self.__uv$config = {
   bundle: '/uv/uv.bundle.js',
   config: '/uv/uv.config.js',
   sw: '/uv/uv.sw.js',
+  // ← Esta línea es la clave, permite que el SW controle /uv/ en vez de /
+  scope: '/uv/'
 };
