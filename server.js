@@ -13,19 +13,21 @@ const __dirname = dirname(__filename);
 const bare = createBareServer('/bare/');
 const app = express();
 
-// CORS headers - IMPORTANTE para GitHub Pages
+// CORS headers - PERMITIR IFRAMES desde GitHub Pages
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.header('X-Frame-Options', 'SAMEORIGIN');
+  // CRÍTICO: Permitir que se cargue en iframes desde cualquier origen
+  res.removeHeader('X-Frame-Options');
+  res.header('Content-Security-Policy', "frame-ancestors *");
   next();
 });
 
 // Servir archivos estáticos de Ultraviolet
 app.use('/uv/', express.static(uvPath));
 
-// Servir el frontend
+// Servir el frontend (si tienes archivos en /public)
 app.use(express.static('public'));
 
 // Ruta principal - HTML que maneja el proxy
@@ -52,6 +54,7 @@ app.get('/', (req, res) => {
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
+            z-index: 10;
         }
         .spinner {
             width: 50px;
@@ -71,12 +74,18 @@ app.get('/', (req, res) => {
             border: none;
             display: none;
         }
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
     <div id="loading">
+        <div class="logo">⚡</div>
         <div class="spinner"></div>
         <p>Iniciando Zephiryx Proxy...</p>
+        <p style="font-size: 0.8rem; margin-top: 1rem; opacity: 0.7;">Powered by Ultraviolet</p>
     </div>
     <iframe id="content"></iframe>
     
@@ -89,12 +98,14 @@ app.get('/', (req, res) => {
         // Registrar Service Worker
         async function init() {
             try {
-                await navigator.serviceWorker.register('/uv/uv.sw.js', {
+                const registration = await navigator.serviceWorker.register('/uv/uv.sw.js', {
                     scope: '/service/'
                 });
                 
                 // Esperar a que esté activo
                 await navigator.serviceWorker.ready;
+                
+                console.log('Service Worker registrado correctamente');
                 
                 // Obtener URL del hash
                 const hash = window.location.hash;
@@ -102,26 +113,47 @@ app.get('/', (req, res) => {
                     const targetUrl = decodeURIComponent(hash.substring(3));
                     const proxyUrl = '/service/' + __uv$config.encodeUrl(targetUrl);
                     
+                    console.log('Cargando:', targetUrl);
                     content.src = proxyUrl;
-                    content.style.display = 'block';
-                    loading.style.display = 'none';
+                    
+                    // Mostrar el contenido después de un pequeño delay
+                    setTimeout(() => {
+                        content.style.display = 'block';
+                        loading.style.display = 'none';
+                    }, 1000);
                 } else {
-                    loading.innerHTML = '<p style="color: #fbbf24;">❌ No se especificó URL. Usa el frontend para navegar.</p>';
+                    loading.innerHTML = '<div class="logo">⚡</div><p style="color: #fbbf24;">No se especificó URL</p><p style="font-size: 0.9rem; margin-top: 1rem;">Usa el frontend de Zephiryx para navegar</p>';
                 }
             } catch (error) {
                 console.error('Error:', error);
-                loading.innerHTML = '<p style="color: #ef4444;">❌ Error al inicializar el proxy</p>';
+                loading.innerHTML = '<div class="logo">❌</div><p style="color: #ef4444;">Error al inicializar el proxy</p><p style="font-size: 0.8rem; margin-top: 1rem;">' + error.message + '</p>';
             }
         }
         
-        // Detectar cambios en el hash
+        // Detectar cambios en el hash para navegación
         window.addEventListener('hashchange', () => {
             const hash = window.location.hash;
             if (hash.startsWith('#q=')) {
+                loading.style.display = 'block';
+                content.style.display = 'none';
+                
                 const targetUrl = decodeURIComponent(hash.substring(3));
                 const proxyUrl = '/service/' + __uv$config.encodeUrl(targetUrl);
+                
+                console.log('Navegando a:', targetUrl);
                 content.src = proxyUrl;
+                
+                setTimeout(() => {
+                    content.style.display = 'block';
+                    loading.style.display = 'none';
+                }, 1000);
             }
+        });
+        
+        // Manejo de errores del iframe
+        content.addEventListener('error', (e) => {
+            console.error('Error en iframe:', e);
+            loading.innerHTML = '<div class="logo">⚠️</div><p style="color: #fbbf24;">Error al cargar el sitio</p>';
         });
         
         init();
@@ -160,6 +192,7 @@ server.on('listening', () => {
   console.log(`\n✨ Backend configurado correctamente`);
   console.log(`   Bare Server: /bare/`);
   console.log(`   UV Path: /uv/`);
+  console.log(`   Iframe-friendly: ✓`);
 });
 
 server.listen({ port: PORT });
