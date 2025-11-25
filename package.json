@@ -5,8 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
   "keywords": ["proxy", "ultraviolet", "web-proxy", "bypass"],
   "author": "Zephiryx",
@@ -14,9 +13,6 @@
   "dependencies": {
     "@titaniumnetwork-dev/ultraviolet": "^3.2.7",
     "@tomphttp/bare-server-node": "^2.0.5",
-    "@mercuryworkshop/wisp-js": "^1.4.0",
-    "@mercuryworkshop/bare-mux": "^2.0.5",
-    "@mercuryworkshop/epoxy-transport": "^2.1.9",
     "express": "^4.19.2"
   },
   "engines": {
