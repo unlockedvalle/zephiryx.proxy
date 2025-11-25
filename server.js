@@ -4,7 +4,6 @@ import { createServer } from 'node:http';
 import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
 import { join } from 'node:path';
 import { hostname } from 'node:os';
-import wisp from '@mercuryworkshop/wisp-js/server';
 
 const bare = createBareServer('/bare/');
 const app = express();
@@ -42,8 +41,6 @@ server.on('request', (req, res) => {
 server.on('upgrade', (req, socket, head) => {
   if (bare.shouldRoute(req)) {
     bare.routeUpgrade(req, socket, head);
-  } else if (req.url.endsWith('/wisp/')) {
-    wisp.routeRequest(req, socket, head);
   } else {
     socket.end();
   }
@@ -58,7 +55,6 @@ server.on('listening', () => {
   console.log(`   Network: http://${hostname()}:${address.port}`);
   console.log(`\n✨ Backend configurado correctamente`);
   console.log(`   Bare Server: /bare/`);
-  console.log(`   Wisp Server: /wisp/`);
   console.log(`   UV Path: /uv/`);
 });
 
