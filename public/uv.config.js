@@ -1,13 +1,10 @@
-// public/uv.config.js → 100 % funcional (copia y pega tal cual)
 self.__uv$config = {
-    prefix: '/uv/service/',
-    bare: '/bare/',
-    encodeUrl: Ultraviolet.codec.xor.encode,
-    decodeUrl: Ultraviolet.codec.xor.decode,
-    handler: '/uv/uv.handler.js',
-    bundle: '/uv/uv.bundle.js',
-    client: '/uv/uv.client.js',
-    config: '/uv/uv.config.js',
-    sw: '/uv/uv.sw.js',
-    scope: '/uv/'
+  prefix: '/uv/service/',
+  bare: '/bare/',
+  encodeUrl: Ultraviolet.codec.xor.encode,
+  decodeUrl: Ultraviolet.codec.xor.decode,
+  handler: 'https://uv.zephyrx.best/uv.handler.js',
+  bundle: 'https://uv.zephyrx.best/uv.bundle.js',
+  client: 'https://uv.zephyrx.best/uv.client.js',
+  sw: 'https://uv.zephyrx.best/uv.sw.js'
 };
