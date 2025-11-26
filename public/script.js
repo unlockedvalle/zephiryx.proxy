@@ -1,9 +1,10 @@
-// public/script.js → Versión FINAL que funciona al 100% en Railway (2025)
+// Estado de la aplicación
 let history = [];
 let favorites = JSON.parse(localStorage.getItem('zephiryx-favorites') || '[]');
 let historyIndex = -1;
 let swReady = false;
 
+// Elementos DOM
 const urlInput = document.getElementById('url-input');
 const goBtn = document.getElementById('go-btn');
 const clearBtn = document.getElementById('clear-btn');
@@ -13,47 +14,47 @@ const refreshBtn = document.getElementById('refresh-btn');
 const homeBtn = document.getElementById('home-btn');
 const starBtn = document.getElementById('star-btn');
 const statusText = document.getElementById('status-text');
+
 const historyBtn = document.getElementById('history-btn');
 const favoritesBtn = document.getElementById('favorites-btn');
 const historySidebar = document.getElementById('history-sidebar');
 const favoritesSidebar = document.getElementById('favorites-sidebar');
 const closeHistory = document.getElementById('close-history');
 const closeFavorites = document.getElementById('close-favorites');
+
 const historyList = document.getElementById('history-list');
 const favoritesList = document.getElementById('favorites-list');
+
 const homePage = document.getElementById('home-page');
 const loadingScreen = document.getElementById('loading-screen');
 const proxyFrame = document.getElementById('proxy-frame');
 
-// REGISTRO DEL SERVICE WORKER DESDE CDN (LA CLAVE DE TODO)
+// Registrar Service Worker
 async function registerSW() {
     if ('serviceWorker' in navigator) {
-        {
         try {
             statusText.textContent = 'Iniciando Service Worker...';
-
-            // ← Cargamos el SW directamente desde el CDN oficial
-            const registration = await navigator.serviceWorker.register(
-                'https://cdn.jsdelivr.net/gh/titaniumnetwork-dev/Ultraviolet@3.2.7/dist/uv.sw.js',
-                { scope: '/uv/' }
-            );
+            
+            const registration = await navigator.serviceWorker.register('/uv/uv.sw.js', {
+                scope: '/service/'
+            });
 
             await navigator.serviceWorker.ready;
-
+            
             swReady = true;
-            statusText.textContent = 'Conectado y listo';
+            statusText.textContent = '✓ Conectado y listo';
             goBtn.disabled = false;
-            console.log('Service Worker cargado desde CDN');
-
+            console.log('✓ Service Worker registrado');
+            
         } catch (error) {
             console.error('Error SW:', error);
-            statusText.textContent = 'Error al iniciar';
+            statusText.textContent = '✗ Error al iniciar';
             alert('Error al iniciar el proxy: ' + error.message);
         }
     }
 }
 
-// Navegar (ruta correcta para que funcione con el CDN)
+// Navegar a URL
 function navigate(url) {
     if (!url) return;
     if (!swReady) {
@@ -70,10 +71,10 @@ function navigate(url) {
     loadingScreen.style.display = 'flex';
     proxyFrame.style.display = 'none';
 
-    const proxyUrl = '/uv/service/' + __uv$config.encodeUrl(formattedUrl);
+    const proxyUrl = '/service/' + __uv$config.encodeUrl(formattedUrl);
     proxyFrame.src = proxyUrl;
     urlInput.value = formattedUrl;
-
+    
     history = history.slice(0, historyIndex + 1);
     history.push(formattedUrl);
     historyIndex = history.length - 1;
@@ -132,11 +133,13 @@ function toggleFavorite() {
     if (historyIndex >= 0) {
         const url = history[historyIndex];
         const index = favorites.indexOf(url);
+        
         if (index > -1) {
             favorites.splice(index, 1);
         } else {
             favorites.push(url);
         }
+        
         localStorage.setItem('zephiryx-favorites', JSON.stringify(favorites));
         updateStar();
         renderFavorites();
@@ -148,7 +151,8 @@ function renderHistory() {
         historyList.innerHTML = '<p class="empty-message">No hay historial aún</p>';
         return;
     }
-    historyList.innerHTML = [...history].reverse().map(url =>
+
+    historyList.innerHTML = [...history].reverse().map(url => 
         `<div class="sidebar-item" onclick="urlInput.value='${url}';navigate('${url}');historySidebar.classList.remove('active')">
             <div class="sidebar-item-text">${url}</div>
         </div>`
@@ -160,7 +164,8 @@ function renderFavorites() {
         favoritesList.innerHTML = '<p class="empty-message">No hay favoritos aún</p>';
         return;
     }
-    favoritesList.innerHTML = favorites.map(url =>
+
+    favoritesList.innerHTML = favorites.map(url => 
         `<div class="sidebar-item">
             <div class="sidebar-item-text" onclick="urlInput.value='${url}';navigate('${url}');favoritesSidebar.classList.remove('active')">${url}</div>
             <button class="delete-btn" onclick="event.stopPropagation();removeFavorite('${url}')">
@@ -180,7 +185,7 @@ function removeFavorite(url) {
     updateStar();
 }
 
-// Event listeners
+// Event Listeners
 urlInput.addEventListener('input', e => {
     clearBtn.style.display = e.target.value ? 'block' : 'none';
 });
@@ -214,6 +219,7 @@ favoritesBtn.addEventListener('click', () => {
 closeHistory.addEventListener('click', () => historySidebar.classList.remove('active'));
 closeFavorites.addEventListener('click', () => favoritesSidebar.classList.remove('active'));
 
+// Site cards
 document.querySelectorAll('.site-card').forEach(card => {
     card.addEventListener('click', () => {
         const url = card.dataset.url;
@@ -222,6 +228,7 @@ document.querySelectorAll('.site-card').forEach(card => {
     });
 });
 
+// Iframe events
 proxyFrame.addEventListener('load', () => {
     setTimeout(() => {
         loadingScreen.style.display = 'none';
@@ -229,6 +236,6 @@ proxyFrame.addEventListener('load', () => {
     }, 800);
 });
 
-// INICIAR
+// Inicializar
 registerSW();
 renderFavorites();
