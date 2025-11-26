@@ -13,8 +13,11 @@ const bare = createBareServer('/bare/');
 const app = express();
 
 // CRÍTICO: Header para permitir Service Worker en /service/
-app.use('/uv/uv.sw.js', (req, res, next) => {
-  res.setHeader('Service-Worker-Allowed', '/');
+app.use((req, res, next) => {
+  if (req.path.includes('uv.sw.js')) {
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  }
   next();
 });
 
