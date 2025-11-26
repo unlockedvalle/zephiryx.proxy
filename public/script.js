@@ -35,22 +35,39 @@ async function registerSW() {
         try {
             statusText.textContent = 'Iniciando Service Worker...';
             
+            // Esperar a que __uv$config esté disponible
+            let attempts = 0;
+            while (typeof __uv$config === 'undefined' && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (typeof __uv$config === 'undefined') {
+                throw new Error('No se pudo cargar la configuración de Ultraviolet');
+            }
+            
+            console.log('✓ Config UV cargada');
+            
             const registration = await navigator.serviceWorker.register('/uv/uv.sw.js', {
-                scope: '/service/'
+                scope: '/service/',
+                updateViaCache: 'none'
             });
 
+            console.log('✓ SW registrado, esperando activación...');
             await navigator.serviceWorker.ready;
             
             swReady = true;
             statusText.textContent = '✓ Conectado y listo';
             goBtn.disabled = false;
-            console.log('✓ Service Worker registrado');
+            console.log('✓ Service Worker activo y listo');
             
         } catch (error) {
             console.error('Error SW:', error);
             statusText.textContent = '✗ Error al iniciar';
-            alert('Error al iniciar el proxy: ' + error.message);
+            alert('Error al iniciar el proxy: ' + error.message + '\n\nRecarga la página (F5)');
         }
+    } else {
+        alert('Tu navegador no soporta Service Workers. Usa Chrome, Firefox o Edge.');
     }
 }
 
