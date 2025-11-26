@@ -6,8 +6,24 @@
     <title>Zephiryx Proxy - Navegación Segura</title>
     <meta name="description" content="Zephiryx Proxy - Navegación web segura y privada con tecnología Ultraviolet">
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Configuración de Ultraviolet INLINE - SE CARGA PRIMERO -->
+    <script>
+        // Configuración que usa el Service Worker
+        self.__uv$config = {
+            prefix: '/service/',
+            bare: '/bare/',
+            encodeUrl: (str) => encodeURIComponent(str),
+            decodeUrl: (str) => decodeURIComponent(str),
+            handler: '/uv/uv.handler.js',
+            bundle: '/uv/uv.bundle.js',
+            config: '/uv.config.js',  // Apunta al nuestro, no al de /uv/
+            sw: '/uv/uv.sw.js',
+        };
+        console.log('✓ Config UV cargada inline');
+    </script>
+    
     <script src="/uv/uv.bundle.js"></script>
-    <script src="/uv/uv.config.js"></script>
 </head>
 <body>
     <!-- Header -->
