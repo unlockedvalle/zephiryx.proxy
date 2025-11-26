@@ -12,6 +12,12 @@ const __dirname = dirname(__filename);
 const bare = createBareServer('/bare/');
 const app = express();
 
+// CRÍTICO: Header para permitir Service Worker en /service/
+app.use('/uv/uv.sw.js', (req, res, next) => {
+  res.setHeader('Service-Worker-Allowed', '/');
+  next();
+});
+
 // Servir archivos estáticos de Ultraviolet
 app.use('/uv/', express.static(uvPath));
 
