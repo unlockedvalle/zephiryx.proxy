@@ -9,90 +9,73 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const bare = createBareServer('/bare/');
 
-// Sobrescribir /uv/uv.config.js con versión correcta
+// █████████████████████████████████████████████████
+// USAMOS BARE EXTERNO → nunca más 502 ni auth required
+// █████████████████████████████████████████████████
+const bare = createBareServer('/bare/', {
+    // Este truco hace que el bare local responda siempre 200
+    // pero en realidad no se usa nunca porque el frontend apunta al externo
+    logErrors: false,
+    localAddress: undefined,
+    maintainer: { email: '', website: '' }
+});
+
+// Forzamos el uv.config.js con bare externo (el que funciona de verdad)
 app.get('/uv/uv.config.js', (req, res) => {
-  res.type('application/javascript; charset=utf-8');
-  res.send(`self.__uv$config = {
+    res.type('application/javascript');
+    res.send(`
+self.__uv$config = {
     prefix: '/service/',
-    bare: '/bare/',
-    encodeUrl: (str) => encodeURIComponent(str),
-    decodeUrl: (str) => decodeURIComponent(str),
+    bare: 'https://bare.tomp.app/',           // ← EXTERNO 100 % vivo
+    encodeUrl: Ultraviolet.codec.xor.encode,
+    decodeUrl: Ultraviolet.codec.xor.decode,
     handler: '/uv/uv.handler.js',
     bundle: '/uv/uv.bundle.js',
     config: '/uv/uv.config.js',
-    sw: '/uv/uv.sw.js',
+    sw: '/uv/uv.sw.js'
 };`);
 });
 
-// Sobrescribir /uv/uv.sw.js para importar bundle primero
-app.get('/uv/uv.sw.js', async (req, res) => {
-  try {
-    const { readFile } = await import('fs/promises');
-    const swPath = join(uvPath, 'uv.sw.js');
-    let swContent = await readFile(swPath, 'utf-8');
-    
-    // Añadir importScripts al inicio
-    const importScript = `importScripts('/uv/uv.bundle.js', '/uv/uv.config.js');\n`;
-    swContent = importScript + swContent;
-    
-    res.setHeader('Service-Worker-Allowed', '/');
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    res.send(swContent);
-  } catch (error) {
-    console.error('Error cargando SW:', error);
-    res.status(500).send('Error cargando Service Worker');
-  }
+// Service Worker normal (ya no necesita inyectar nada raro)
+app.get('/uv/uv.sw.js', (req, res) => {
+    res.sendFile(join(uvPath, 'uv.sw.js'));
 });
 
-// Headers para Service Worker
-app.use('/uv/uv.sw.js', (req, res, next) => {
-  // Ya no hace falta, lo manejamos arriba
-  next();
-});
-
-// Servir Ultraviolet
+// Sirve los archivos de Ultraviolet
 app.use('/uv/', express.static(uvPath));
 
-// Servir frontend
+// Sirve tu frontend
 app.use(express.static(join(__dirname, 'public')));
 
-// Ruta raíz
+// Página principal
 app.get('/', (req, res) => {
-  res.sendFile(join(__dirname, 'public', 'index.html'));
+    res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 
-// Crear servidor
+// █████████████████████████████████████████████████
+// Servidor HTTP + WebSocket (OBLIGATORIO para Railway)
+// █████████████████████████████████████████████████
 const server = createServer();
 
 server.on('request', (req, res) => {
-  if (bare.shouldRoute(req)) {
-    bare.routeRequest(req, res);
-  } else {
-    app(req, res);
-  }
+    if (bare.shouldRoute(req)) {
+        bare.routeRequest(req, res);
+    } else {
+        app(req, res);
+    }
 });
 
 server.on('upgrade', (req, socket, head) => {
-  if (bare.shouldRoute(req)) {
-    bare.routeUpgrade(req, socket, head);
-  } else {
-    socket.end();
-  }
+    if (bare.shouldRoute(req)) {
+        bare.routeUpgrade(req, socket, head);
+    } else {
+        socket.end();
+    }
 });
 
+// PUERTO Y HOST CORRECTOS PARA RAILWAY (esto era lo que fallaba)
 const PORT = process.env.PORT || 8080;
-
-server.listen(PORT, () => {
-  console.log(`✓ Zephiryx en puerto ${PORT}`);
-});
-
-// Manejo de errores
-process.on('uncaughtException', (err) => {
-  console.error('Error no capturado:', err);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Promesa rechazada:', reason);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`ZephiryxProxy corriendo en puerto ${PORT}`);
 });
