@@ -1,11 +1,11 @@
+// Configuración de Ultraviolet
 self.__uv$config = {
     prefix: '/service/',
-    bare: 'https://bare.tomp.app/',
-    encodeUrl: Ultraviolet.codec.xor.encode,
-    decodeUrl: Ultraviolet.codec.xor.decode,
+    bare: '/bare/',
+    encodeUrl: (str) => encodeURIComponent(str),
+    decodeUrl: (str) => decodeURIComponent(str),
     handler: '/uv/uv.handler.js',
     bundle: '/uv/uv.bundle.js',
     config: '/uv/uv.config.js',
     sw: '/uv/uv.sw.js',
-    authenticate: false
 };
