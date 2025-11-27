@@ -12,6 +12,22 @@ const __dirname = dirname(__filename);
 const bare = createBareServer('/bare/');
 const app = express();
 
+// CRÍTICO: Sobrescribir /uv/uv.config.js con nuestra versión
+app.get('/uv/uv.config.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.send(`// Configuración de Ultraviolet
+self.__uv$config = {
+    prefix: '/service/',
+    bare: '/bare/',
+    encodeUrl: (str) => encodeURIComponent(str),
+    decodeUrl: (str) => decodeURIComponent(str),
+    handler: '/uv/uv.handler.js',
+    bundle: '/uv/uv.bundle.js',
+    config: '/uv/uv.config.js',
+    sw: '/uv/uv.sw.js',
+};`);
+});
+
 // CRÍTICO: Header para permitir Service Worker en /service/
 app.use((req, res, next) => {
   if (req.path.includes('uv.sw.js')) {
@@ -21,11 +37,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Servir archivos estáticos de Ultraviolet
-app.use('/uv/', express.static(uvPath));
-
-// Servir archivos del frontend (public/)
+// Servir archivos del frontend PRIMERO (para que /uv.config.js sea el nuestro)
 app.use(express.static(join(__dirname, 'public')));
+
+// Servir archivos estáticos de Ultraviolet DESPUÉS
+app.use('/uv/', express.static(uvPath));
 
 // Ruta principal
 app.get('/', (req, res) => {
