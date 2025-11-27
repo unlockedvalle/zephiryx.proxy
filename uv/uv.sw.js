@@ -1,7 +1,9 @@
-// uv.sw.js – OFICIAL DE TITANIUM NETWORK 2025 (merged con importScripts)
-importScripts('/uv/uv.bundle.js');  // Carga UVServiceWorker y lógica principal
-importScripts('/uv/uv.config.js');  // Carga __uv$config
+// uv.sw.js – WRAPPER OFICIAL DE TITANIUM NETWORK 2025 (importa bundle y config PRIMERO)
+importScripts('/uv/uv.bundle.js');  // ← BUNDLE PRIMERO (define UVServiceWorker)
+importScripts('/uv/uv.config.js');  // ← CONFIG SEGUNDO (usa el bundle)
 
-const sw = new UVServiceWorker();  // Ahora sí existe
+importScripts('/uv/uv.sw.js');  // ← IMPORTA EL SW MINIMAL DESPUÉS (de las docs)
+
+const sw = new UVServiceWorker();  // ← AHORA SÍ ESTÁ DEFINIDO
 
 self.addEventListener('fetch', event => event.respondWith(sw.fetch(event)));
