@@ -2,8 +2,8 @@ import { createBareServer } from '@tomphttp/bare-server-node';
 import express from 'express';
 import { createServer } from 'node:http';
 import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,88 +11,37 @@ const __dirname = dirname(__filename);
 const app = express();
 const bare = createBareServer('/bare/');
 
-// Sobrescribir /uv/uv.config.js con versión correcta
-app.get('/uv/uv.config.js', (req, res) => {
-  res.type('application/javascript; charset=utf-8');
-  res.send(`self.__uv$config = {
-    prefix: '/service/',
-    bare: '/bare/',
-    encodeUrl: (str) => encodeURIComponent(str),
-    decodeUrl: (str) => decodeURIComponent(str),
-    handler: '/uv/uv.handler.js',
-    bundle: '/uv/uv.bundle.js',
-    config: '/uv/uv.config.js',
-    sw: '/uv/uv.sw.js',
-};`);
-});
-
-// Sobrescribir /uv/uv.sw.js para importar bundle primero
-app.get('/uv/uv.sw.js', async (req, res) => {
-  try {
-    const { readFile } = await import('fs/promises');
-    const swPath = join(uvPath, 'uv.sw.js');
-    let swContent = await readFile(swPath, 'utf-8');
-    
-    // Añadir importScripts al inicio
-    const importScript = `importScripts('/uv/uv.bundle.js', '/uv/uv.config.js');\n`;
-    swContent = importScript + swContent;
-    
-    res.setHeader('Service-Worker-Allowed', '/');
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    res.send(swContent);
-  } catch (error) {
-    console.error('Error cargando SW:', error);
-    res.status(500).send('Error cargando Service Worker');
-  }
-});
-
-// Headers para Service Worker
-app.use('/uv/uv.sw.js', (req, res, next) => {
-  // Ya no hace falta, lo manejamos arriba
-  next();
-});
-
-// Servir Ultraviolet
+// NO SOBRESCRIBAS NADA → deja que use los archivos correctos de la carpeta uv/
 app.use('/uv/', express.static(uvPath));
 
-// Servir frontend
+// Sirve los archivos estáticos del frontend
 app.use(express.static(join(__dirname, 'public')));
 
 // Ruta raíz
 app.get('/', (req, res) => {
-  res.sendFile(join(__dirname, 'public', 'index.html'));
+    res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 
-// Crear servidor
+// Servidor HTTP + Bare
 const server = createServer();
 
 server.on('request', (req, res) => {
-  if (bare.shouldRoute(req)) {
-    bare.routeRequest(req, res);
-  } else {
-    app(req, res);
-  }
+    if (bare.shouldRoute(req)) {
+        bare.routeRequest(req, res);
+    } else {
+        app(req, res);
+    }
 });
 
 server.on('upgrade', (req, socket, head) => {
-  if (bare.shouldRoute(req)) {
-    bare.routeUpgrade(req, socket, head);
-  } else {
-    socket.end();
-  }
+    if (bare.shouldRoute(req)) {
+        bare.routeUpgrade(req, socket, head);
+    } else {
+        socket.end();
+    }
 });
 
 const PORT = process.env.PORT || 8080;
-
 server.listen(PORT, () => {
-  console.log(`✓ Zephiryx en puerto ${PORT}`);
-});
-
-// Manejo de errores
-process.on('uncaughtException', (err) => {
-  console.error('Error no capturado:', err);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Promesa rechazada:', reason);
+    console.log(`Zephiryx corriendo en puerto ${PORT}`);
 });
