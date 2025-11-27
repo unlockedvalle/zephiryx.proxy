@@ -6,24 +6,32 @@
     <title>Zephiryx Proxy - Navegación Segura</title>
     <meta name="description" content="Zephiryx Proxy - Navegación web segura y privada con tecnología Ultraviolet">
     <link rel="stylesheet" href="style.css">
-    
-    <!-- Configuración de Ultraviolet INLINE - SE CARGA PRIMERO -->
-    <script>
-        // Configuración que usa el Service Worker
-        self.__uv$config = {
-            prefix: '/service/',
-            bare: '/bare/',
-            encodeUrl: (str) => encodeURIComponent(str),
-            decodeUrl: (str) => decodeURIComponent(str),
-            handler: '/uv/uv.handler.js',
-            bundle: '/uv/uv.bundle.js',
-            config: '/uv.config.js',  // Apunta al nuestro, no al de /uv/
-            sw: '/uv/uv.sw.js',
-        };
-        console.log('✓ Config UV cargada inline');
-    </script>
-    
+
+    <!-- ULTRAVIOLET ESTÁTICO CORRECTO (OBLIGATORIO) -->
     <script src="/uv/uv.bundle.js"></script>
+    <script src="/uv/uv.config.js"></script>
+
+    <!-- REGISTRO DEL SERVICE WORKER CON SCOPE RAÍZ -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const reg = await navigator.serviceWorker.register('/uv/uv.sw.js', { scope: '/' });
+                    console.log('Service Worker registrado con scope /');
+                    await navigator.serviceWorker.ready;
+                    const status = document.getElementById('status-text');
+                    if (status) status.textContent = 'Conectado y listo';
+                    const goBtn = document.getElementById('go-btn');
+                    if (goBtn) goBtn.disabled = false;
+                    console.log('Service Worker 100% activo');
+                } catch (err) {
+                    console.error('Error SW:', err);
+                    const status = document.getElementById('status-text');
+                    if (status) status.textContent = 'Error al iniciar';
+                }
+            });
+        }
+    </script>
 </head>
 <body>
     <!-- Header -->
