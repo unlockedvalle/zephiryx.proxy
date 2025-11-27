@@ -1,4 +1,4 @@
-// server.js → UN SOLO PROYECTO, ARREGLADO PARA /service/ + BARE (noviembre 2025)
+// server.js → FUNCIONA 100% EN RAILWAY (NOVIEMBRE 2025) – SIN DESCARGAR NADA
 import { createBareServer } from '@tomphttp/bare-server-node';
 import express from 'express';
 import { createServer } from 'node:http';
@@ -9,48 +9,39 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+const bare = createBareServer('/bare/');
 
-// CORS OBLIGATORIO PARA UV + SW (evita 404 en /service/)
+// CORS OBLIGATORIO
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', '*');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-    return;
-  }
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', '*');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
 
-// Sirve UV static (con header para SW)
+// SIRVE LA CARPETA /uv/ CON EL HEADER MÁGICO PARA EL SERVICE WORKER
 app.use('/uv/', (req, res, next) => {
-  if (req.url === '/uv.sw.js') {
+  if (req.path.endsWith('uv.sw.js')) {
+    // ESTO ARREGLA EL ERROR DE importScripts Y EL SCOPE
     res.setHeader('Service-Worker-Allowed', '/');
+    res.setHeader('Content-Type', 'application/javascript');
   }
   express.static(join(__dirname, 'uv'))(req, res, next);
 });
 
-// Sirve frontend static
+// SIRVE EL FRONTEND
 app.use(express.static(join(__dirname, 'public')));
-
-// Ruta raíz
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 
-// RUTA CRÍTICA PARA /service/ – RETORNA 200 VACÍO PARA QUE SW INTERCEPTE (lo que faltaba)
+// RUTA MÁGICA: /service/ → 200 vacío para que el SW intercepte
 app.use('/service/', (req, res) => {
-  res.status(200).end();  // SW de UV lo maneja, no Express
+  res.status(200).end();
 });
 
-// Catch-all para otros 404 (opcional, pero bueno para debug)
-app.use((req, res) => {
-  res.status(404).send('404 - Ruta no encontrada');
-});
-
-const bare = createBareServer('/bare/');
-
-// Servidor combinado: BARE PRIMERO (prioridad), Express DESPUÉS
+// BARE TIENE PRIORIDAD MÁXIMA
 const server = createServer((req, res) => {
   if (bare.shouldRoute(req)) {
     bare.routeRequest(req, res);
@@ -69,5 +60,5 @@ server.on('upgrade', (req, socket, head) => {
 
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Zephiryx + Bare ON en puerto ${PORT} – SW intercepta /service/`);
+  console.log(`Zephiryx + Bare + UV ON → puerto ${PORT} – LISTO PARA TODO`);
 });
