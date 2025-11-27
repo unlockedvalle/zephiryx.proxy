@@ -26,10 +26,29 @@ app.get('/uv/uv.config.js', (req, res) => {
 };`);
 });
 
+// Sobrescribir /uv/uv.sw.js para importar bundle primero
+app.get('/uv/uv.sw.js', async (req, res) => {
+  try {
+    const { readFile } = await import('fs/promises');
+    const swPath = join(uvPath, 'uv.sw.js');
+    let swContent = await readFile(swPath, 'utf-8');
+    
+    // Añadir importScripts al inicio
+    const importScript = `importScripts('/uv/uv.bundle.js', '/uv/uv.config.js');\n`;
+    swContent = importScript + swContent;
+    
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.send(swContent);
+  } catch (error) {
+    console.error('Error cargando SW:', error);
+    res.status(500).send('Error cargando Service Worker');
+  }
+});
+
 // Headers para Service Worker
 app.use('/uv/uv.sw.js', (req, res, next) => {
-  res.setHeader('Service-Worker-Allowed', '/');
-  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  // Ya no hace falta, lo manejamos arriba
   next();
 });
 
