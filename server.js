@@ -1,4 +1,4 @@
-// server.js → ÚNICO PROYECTO, FUNCIONA 100% EN RAILWAY 2025
+// server.js → ARREGLADO PARA /service/ + BARE EN RAILWAY 2025
 import { createBareServer } from '@tomphttp/bare-server-node';
 import express from 'express';
 import { createServer } from 'node:http';
@@ -9,9 +9,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const bare = createBareServer('/bare/');  // ← Ruta del Bare
+const bare = createBareServer('/bare/');
 
-// === IMPORTANTE: CORS para que Ultraviolet no de 404 ===
+// CORS OBLIGATORIO para que SW intercepte /service/ (de StackOverflow)
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -23,16 +23,23 @@ app.use((req, res, next) => {
   next();
 });
 
-// Sirve Ultraviolet static
+// Sirve UV y frontend
 app.use('/uv/', express.static(join(__dirname, 'uv')));
-
-// Sirve el frontend
 app.use(express.static(join(__dirname, 'public')));
-app.get('/', (req, res) => {
-  res.sendFile(join(__dirname, 'public', 'index.html'));
+app.get('/', (req, res) => res.sendFile(join(__dirname, 'public', 'index.html')));
+
+// RUTA ESPECÍFICA PARA /service/ – FUERZA INTERCEPTO DEL SW (lo que faltaba)
+app.use('/service/', (req, res) => {
+  // Reenvía al SW/Bare – evita 404 directo
+  if (bare.shouldRoute(req)) {
+    bare.routeRequest(req, res);
+  } else {
+    // Si no es Bare, deja que SW lo maneje (retorna 200 vacío para que SW intercepte)
+    res.status(200).end();
+  }
 });
 
-// === RUTEO FINAL: Bare primero, Express después ===
+// Servidor combinado – Bare PRIMERO, Express DESPUÉS (prioridad)
 const server = createServer((req, res) => {
   if (bare.shouldRoute(req)) {
     bare.routeRequest(req, res);
@@ -51,5 +58,5 @@ server.on('upgrade', (req, socket, head) => {
 
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Zephiryx + Bare EN UN SOLO PROYECTO corriendo en puerto ${PORT}`);
+  console.log(`Zephiryx + Bare ON en puerto ${PORT} – /service/ interceptado`);
 });
