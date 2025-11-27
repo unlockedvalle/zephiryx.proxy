@@ -1,7 +1,6 @@
 import { createBareServer } from '@tomphttp/bare-server-node';
 import express from 'express';
 import { createServer } from 'node:http';
-import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,21 +10,16 @@ const __dirname = dirname(__filename);
 const app = express();
 const bare = createBareServer('/bare/');
 
-// NO SOBRESCRIBAS NADA → deja que use los archivos correctos de la carpeta uv/
-app.use('/uv/', express.static(uvPath));
-
-// Sirve los archivos estáticos del frontend
+// ← ESTO ES LO IMPORTANTE QUE FALTABA
+app.use('/uv/', express.static(join(__dirname, 'uv')));
 app.use(express.static(join(__dirname, 'public')));
 
-// Ruta raíz
 app.get('/', (req, res) => {
     res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 
-// Servidor HTTP + Bare
-const server = createServer();
-
-server.on('request', (req, res) => {
+// Servidor combinado Bare + Express
+const server = createServer((req, res) => {
     if (bare.shouldRoute(req)) {
         bare.routeRequest(req, res);
     } else {
@@ -41,7 +35,9 @@ server.on('upgrade', (req, socket, head) => {
     }
 });
 
+// ← ESTA LÍNEA ES LA QUE HACE QUE RAILWAY NO DIGA "failed to respond"
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
-    console.log(`Zephiryx corriendo en puerto ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Zephiryx corriendo en https://tuproyecto.up.railway.app`);
+    console.log(`Puerto: ${PORT}`);
 });
