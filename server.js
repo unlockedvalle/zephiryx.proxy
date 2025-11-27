@@ -2,21 +2,19 @@ import { createBareServer } from '@tomphttp/bare-server-node';
 import express from 'express';
 import { createServer } from 'node:http';
 import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
-import { hostname } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const bare = createBareServer('/bare/');
 const app = express();
+const bare = createBareServer('/bare/');
 
-// CRÍTICO: Sobrescribir /uv/uv.config.js con nuestra versión
+// Sobrescribir /uv/uv.config.js con versión correcta
 app.get('/uv/uv.config.js', (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-  res.send(`// Configuración de Ultraviolet
-self.__uv$config = {
+  res.type('application/javascript; charset=utf-8');
+  res.send(`self.__uv$config = {
     prefix: '/service/',
     bare: '/bare/',
     encodeUrl: (str) => encodeURIComponent(str),
@@ -28,27 +26,25 @@ self.__uv$config = {
 };`);
 });
 
-// CRÍTICO: Header para permitir Service Worker en /service/
-app.use((req, res, next) => {
-  if (req.path.includes('uv.sw.js')) {
-    res.setHeader('Service-Worker-Allowed', '/');
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-  }
+// Headers para Service Worker
+app.use('/uv/uv.sw.js', (req, res, next) => {
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   next();
 });
 
-// Servir archivos del frontend PRIMERO (para que /uv.config.js sea el nuestro)
-app.use(express.static(join(__dirname, 'public')));
-
-// Servir archivos estáticos de Ultraviolet DESPUÉS
+// Servir Ultraviolet
 app.use('/uv/', express.static(uvPath));
 
-// Ruta principal
+// Servir frontend
+app.use(express.static(join(__dirname, 'public')));
+
+// Ruta raíz
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 
-// Crear servidor HTTP
+// Crear servidor
 const server = createServer();
 
 server.on('request', (req, res) => {
@@ -69,11 +65,15 @@ server.on('upgrade', (req, socket, head) => {
 
 const PORT = process.env.PORT || 8080;
 
-server.on('listening', () => {
-  const address = server.address();
-  console.log(`🚀 Zephiryx Proxy funcionando en puerto ${address.port}`);
-  console.log(`✓ Backend listo`);
-  console.log(`✓ Frontend listo`);
+server.listen(PORT, () => {
+  console.log(`✓ Zephiryx en puerto ${PORT}`);
 });
 
-server.listen({ port: PORT });
+// Manejo de errores
+process.on('uncaughtException', (err) => {
+  console.error('Error no capturado:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Promesa rechazada:', reason);
+});
